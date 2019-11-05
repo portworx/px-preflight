@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nc-script
+  namespace: kube-system
+data:
+  entrypoint.sh: |-
+    #!/bin/bash
+    apt-get update
+    apt-get -y install nmap
+    for i in $(seq $START_PORT $END_PORT); do
+      ncat -lk $i | sed -u "s/^/NC:$(hostname -i):$i<-/" &
+    done
+    sleep infinity
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nc
+  namespace: kube-system
+  labels:
+    name: nc
+spec:
+  selector:
+    matchLabels:
+      name: nc
+  minReadySeconds: 0
+  template:
+    metadata:
+      labels:
+        name: nc
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: px/enabled
+                operator: NotIn
+                values:
+                - "false"
+              - key: node-role.kubernetes.io/master
+                operator: DoesNotExist
+      hostNetwork: true
+      hostPID: false
+      terminationGracePeriodSeconds: 0
+      volumes:
+      - name: nc-script
+        configMap:
+          defaultMode: 0700
+          name: nc-script
+      hostNetwork: true
+      containers:
+        - name: nc
+          image: ubuntu:18.04
+          command:
+          - /entrypoint.sh
+          volumeMounts:
+          - name: nc-script
+            mountPath: /entrypoint.sh
+            readOnly: true
+            subPath: entrypoint.sh
+          env:
+            - name: START_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: preflight-config
+                  key: start_port
+            - name: END_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: preflight-config
+                  key: end_port
+            - name: NODES
+              valueFrom:
+                configMapKeyRef:
+                  name: preflight-config
+                  key: nodes
