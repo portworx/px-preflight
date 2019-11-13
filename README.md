@@ -46,6 +46,8 @@ configmap "node-script" deleted
 configmap "nc-script" deleted
 daemonset.apps "node" deleted
 daemonset.apps "nc" deleted
+SUMMARY
+-------
 192.168.102.101 has 2 CPUs
 192.168.102.102 has 2 CPUs
 192.168.102.103 has 2 CPUs
