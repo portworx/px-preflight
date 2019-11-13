@@ -67,3 +67,8 @@ SUMMARY
 192.168.102.102 has 9347 MB free on /var
 192.168.102.103 has 9348 MB free on /var
 ```
+
+# Notes
+
+ * The output is actually colored, red for bad, green for good. Unfortunately this is not possible to show in markdown.
+ * Ports can be configured at the top of `go.sh`. The various minimum requirements can be changed just below them.
