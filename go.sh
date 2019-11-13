@@ -62,6 +62,8 @@ kubectl delete ds nc -n kube-system
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 RESET='\033[0m'
+echo SUMMARY
+echo -------
 
 while IFS=: read host n; do
   if [ $MIN_CORES -gt $n ]; then
@@ -127,7 +129,6 @@ for a in $NODES; do
     done
   done
 done >/var/tmp/preflight.nc.desired
-echo '192.168.111.111:1:foo' >>/var/tmp/preflight.nc.desired
 comm -23 /var/tmp/preflight.nc.desired /var/tmp/preflight.nc | while IFS=: read dest port src; do
   echo -e ${RED}Cannot connect from $src to $dest:$port
 done
