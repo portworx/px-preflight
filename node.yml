@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: node-script
+  namespace: kube-system
+data:
+  entrypoint.sh: |-
+    #!/bin/sh
+    apk add jq curl
+    for i in $NODES; do
+      for p in $(seq $START_PORT $END_PORT); do
+        hostname -i | nc $i $p
+      done
+    done
+    echo SWAP:$(hostname -i):$(tail +2 /proc/swaps | wc -l)
+    echo CPU:$(hostname -i):$(grep -c processor /proc/cpuinfo)
+    echo RAM:$(hostname -i):$(free -g | awk '/Mem/{print$2}')
+    echo VAR:$(hostname -i):$(df -m /host-var | tail -1 | awk '{print$4}')
+    echo KERNEL:$(hostname -i):$(uname -r)
+    echo DOCKER:$(hostname -i):$(curl -s --unix-socket /var/run/docker.sock http://dummy/version | jq -r .Version)
+    echo COMPLETE
+    sleep 1d
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node
+  namespace: kube-system
+  labels:
+    name: node
+spec:
+  selector:
+    matchLabels:
+      name: node
+  minReadySeconds: 0
+  template:
+    metadata:
+      labels:
+        name: node
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: px/enabled
+                operator: NotIn
+                values:
+                - "false"
+              - key: node-role.kubernetes.io/master
+                operator: DoesNotExist
+      hostNetwork: true
+      terminationGracePeriodSeconds: 0
+      volumes:
+      - name: node-script
+        configMap:
+          defaultMode: 0700
+          name: node-script
+      - name: host-var
+        hostPath:
+          path: /var
+          type: Directory
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+      containers:
+        - name: node
+          image: alpine:latest
+          command:
+          - /entrypoint.sh
+          volumeMounts:
+          - name: node-script
+            mountPath: /entrypoint.sh
+            readOnly: true
+            subPath: entrypoint.sh
+          - name: host-var
+            mountPath: /host-var
+          - name: docker-sock
+            mountPath: /var/run/docker.sock
+          env:
+            - name: START_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: preflight-config
+                  key: start_port
+            - name: END_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: preflight-config
+                  key: end_port
+            - name: NODES
+              valueFrom:
+                configMapKeyRef:
+                  name: preflight-config
+                  key: nodes
