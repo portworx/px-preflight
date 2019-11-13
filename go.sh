@@ -7,7 +7,7 @@ NODES=$(kubectl get nodes -o wide -l 'px/enabled!=false,!node-role.kubernetes.io
 MIN_CORES=4
 MIN_DOCKER=1.13.1
 MIN_KERNEL=3.10.0
-MIN_RAM=8
+MIN_RAM=7719
 MIN_VAR=2048
 
 kubectl apply -f - <<EOF
@@ -102,7 +102,7 @@ while IFS=: read host n; do
   else
     echo -ne $GREEN
   fi
-  echo $host has $n GB RAM
+  echo $host has $n MB RAM
 done <preflight.node.RAM
 
 while IFS=: read host n; do

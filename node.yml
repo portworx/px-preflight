@@ -14,7 +14,7 @@ data:
     done
     echo SWAP:$(hostname -i):$(tail +2 /proc/swaps | wc -l)
     echo CPU:$(hostname -i):$(grep -c processor /proc/cpuinfo)
-    echo RAM:$(hostname -i):$(free -g | awk '/Mem/{print$2}')
+    echo RAM:$(hostname -i):$(free -m | awk '/Mem/{print$2}')
     echo VAR:$(hostname -i):$(df -m /host-var | tail -1 | awk '{print$4}')
     echo KERNEL:$(hostname -i):$(uname -r)
     echo DOCKER:$(hostname -i):$(curl -s --unix-socket /var/run/docker.sock http://dummy/version | jq -r .Version)
