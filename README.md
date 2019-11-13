@@ -1,6 +1,12 @@
 # What
 
-This will provision some DaemonSets on your Kubernetes cluster, use them to run some basic checks, and then delete them again.
+This will provision some DaemonSets on your Kubernetes cluster, use them to run some basic checks, and then delete them again. Checks include:
+ * CPU cores
+ * Docker version
+ * Kernel version
+ * RAM
+ * /var space
+ * Network connectivity between all worker nodes in the defined port range
 
 # How
 
@@ -66,6 +72,7 @@ SUMMARY
 192.168.102.101 has 9245 MB free on /var
 192.168.102.102 has 9347 MB free on /var
 192.168.102.103 has 9348 MB free on /var
+Cannot connect from 192.168.102.101 to 192.168.102.102:9001
 ```
 
 # Notes
