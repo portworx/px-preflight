@@ -5,13 +5,14 @@ metadata:
   namespace: kube-system
 data:
   entrypoint.sh: |-
-    #!/bin/bash
-    apt-get update
-    apt-get -y install nmap
+    #!/bin/sh
+    apk add netcat-openbsd sed
     for i in $(seq $START_PORT $END_PORT); do
-      ncat -lk $i | sed -u "s/^/NC:$(hostname -i):$i<-/" &
+      nc -lk $i | sed -u "s/^/NC:$(hostname -i):$i:/" &
     done
-    sleep infinity
+    sleep 1
+    echo READY
+    sleep 1d
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -42,7 +43,6 @@ spec:
               - key: node-role.kubernetes.io/master
                 operator: DoesNotExist
       hostNetwork: true
-      hostPID: false
       terminationGracePeriodSeconds: 0
       volumes:
       - name: nc-script
@@ -52,7 +52,7 @@ spec:
       hostNetwork: true
       containers:
         - name: nc
-          image: ubuntu:18.04
+          image: alpine:latest
           command:
           - /entrypoint.sh
           volumeMounts:
