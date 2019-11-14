@@ -7,6 +7,7 @@ This will provision some DaemonSets on your Kubernetes cluster, use them to run 
  * RAM
  * /var space
  * Network connectivity between all worker nodes in the defined port range
+ * Ping latency
 
 # How
 
@@ -72,6 +73,12 @@ SUMMARY
 192.168.102.101 has 9245 MB free on /var
 192.168.102.102 has 9347 MB free on /var
 192.168.102.103 has 9348 MB free on /var
+Latency from 192.168.102.101 to 192.168.102.102 is 399 μs
+Latency from 192.168.102.101 to 192.168.102.103 is 221 μs
+Latency from 192.168.102.102 to 192.168.102.101 is 1062 μs
+Latency from 192.168.102.102 to 192.168.102.103 is 310 μs
+Latency from 192.168.102.103 to 192.168.102.101 is 260 μs
+Latency from 192.168.102.103 to 192.168.102.102 is 279 μs
 Cannot connect from 192.168.102.101 to 192.168.102.102:9001
 ```
 

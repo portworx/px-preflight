@@ -8,6 +8,8 @@ data:
     #!/bin/sh
     apk add jq curl
     for i in $NODES; do
+      [ $(hostname -i) = $i ] && continue
+      echo PING:$(hostname -i):$i:$(echo 1000*$(ping -qc 4 $i | tail -1 | cut -f 4 -d /) | bc | cut -f 1 -d .)
       for p in $(seq $START_PORT $END_PORT); do
         hostname -i | nc $i $p
       done
