@@ -62,17 +62,17 @@ kubectl delete cm nc-script -n kube-system
 kubectl delete ds node -n kube-system
 kubectl delete ds nc -n kube-system
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
+FAIL='\033[0;31mFAIL: '
+PASS='\033[0;32mPASS: '
 RESET='\033[0m'
 echo SUMMARY
 echo -------
 
 while IFS=: read host n; do
   if [ $MIN_CORES -gt $n ]; then
-    echo -ne $RED
+    echo -ne "$FAIL"
   else
-    echo -ne $GREEN
+    echo -ne "$PASS"
   fi
   echo $host has $n CPUs
 done <preflight.node.CPU
@@ -81,9 +81,9 @@ MIN_DOCKER=$(sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g' <
 while IFS=: read host n; do
   m=$(sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g' <<<$n)
   if [ $m \< $MIN_DOCKER ]; then
-    echo -ne $RED
+    echo -ne "$FAIL"
   else
-    echo -ne $GREEN
+    echo -ne "$PASS"
   fi
   echo $host is running Docker $n
 done <preflight.node.DOCKER
@@ -92,44 +92,44 @@ MIN_KERNEL=$(sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g' <
 while IFS=: read host n; do
   m=$(sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g' <<<$n)
   if [ $m \< $MIN_KERNEL ]; then
-    echo -ne $RED
+    echo -ne "$FAIL"
   else
-    echo -ne $GREEN
+    echo -ne "$PASS"
   fi
   echo $host is running kernel $n
 done <preflight.node.KERNEL
 
 while IFS=: read host n; do
   if [ $MIN_RAM -gt $n ]; then
-    echo -ne $RED
+    echo -ne "$FAIL"
   else
-    echo -ne $GREEN
+    echo -ne "$PASS"
   fi
   echo $host has $n MB RAM
 done <preflight.node.RAM
 
 while IFS=: read host n; do
   if [ $n -gt 0 ]; then
-    echo -e $RED$host has swap
+    echo -e "$FAIL$host has swap"
   else
-    echo -e $GREEN$host has no swap
+    echo -e "$PASS$host has no swap"
   fi
 done <preflight.node.SWAP
 
 while IFS=: read host n; do
   if [ $MIN_VAR -gt $n ]; then
-    echo -ne $RED
+    echo -ne "$FAIL"
   else
-    echo -ne $GREEN
+    echo -ne "$PASS"
   fi
   echo $host has $n MB free on /var
 done <preflight.node.VAR
 
 while IFS=: read src dest n; do
   if [ $MAX_PING -lt $n ]; then
-    echo -ne $RED
+    echo -ne "$FAIL"
   else
-    echo -ne $GREEN
+    echo -ne "$PASS"
   fi
   echo Latency from $src to $dest is $n μs
 done <preflight.node.PING
@@ -143,7 +143,7 @@ for a in $NODES; do
   done
 done >/var/tmp/preflight.nc.desired
 comm -23 /var/tmp/preflight.nc.desired /var/tmp/preflight.nc | while IFS=: read dest port src; do
-  echo -e ${RED}Cannot connect from $src to $dest:$port
+  echo -e "${FAIL}Cannot connect from $src to $dest:$port"
 done
 
 echo -ne $RESET

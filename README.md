@@ -55,34 +55,33 @@ daemonset.apps "node" deleted
 daemonset.apps "nc" deleted
 SUMMARY
 -------
-192.168.102.101 has 2 CPUs
-192.168.102.102 has 2 CPUs
-192.168.102.103 has 2 CPUs
-192.168.102.101 is running Docker 1.13.1
-192.168.102.102 is running Docker 1.13.1
-192.168.102.103 is running Docker 1.13.1
-192.168.102.101 is running kernel 3.10.0-957.1.3.el7.x86_64
-192.168.102.102 is running kernel 3.10.0-957.1.3.el7.x86_64
-192.168.102.103 is running kernel 3.10.0-957.1.3.el7.x86_64
-192.168.102.101 has 7719 MB RAM
-192.168.102.102 has 7719 MB RAM
-192.168.102.103 has 7719 MB RAM
-192.168.102.101 has no swap
-192.168.102.102 has no swap
-192.168.102.103 has no swap
-192.168.102.101 has 9245 MB free on /var
-192.168.102.102 has 9347 MB free on /var
-192.168.102.103 has 9348 MB free on /var
-Latency from 192.168.102.101 to 192.168.102.102 is 399 μs
-Latency from 192.168.102.101 to 192.168.102.103 is 221 μs
-Latency from 192.168.102.102 to 192.168.102.101 is 1062 μs
-Latency from 192.168.102.102 to 192.168.102.103 is 310 μs
-Latency from 192.168.102.103 to 192.168.102.101 is 260 μs
-Latency from 192.168.102.103 to 192.168.102.102 is 279 μs
-Cannot connect from 192.168.102.101 to 192.168.102.102:9001
+FAIL: 192.168.102.101 has 2 CPUs
+FAIL: 192.168.102.102 has 2 CPUs
+FAIL: 192.168.102.103 has 2 CPUs
+PASS: 192.168.102.101 is running Docker 1.13.1
+PASS: 192.168.102.102 is running Docker 1.13.1
+PASS: 192.168.102.103 is running Docker 1.13.1
+PASS: 192.168.102.101 is running kernel 3.10.0-957.1.3.el7.x86_64
+PASS: 192.168.102.102 is running kernel 3.10.0-957.1.3.el7.x86_64
+PASS: 192.168.102.103 is running kernel 3.10.0-957.1.3.el7.x86_64
+PASS: 192.168.102.101 has 7719 MB RAM
+PASS: 192.168.102.102 has 7719 MB RAM
+PASS: 192.168.102.103 has 7719 MB RAM
+PASS: 192.168.102.101 has no swap
+PASS: 192.168.102.102 has no swap
+PASS: 192.168.102.103 has no swap
+PASS: 192.168.102.101 has 9245 MB free on /var
+PASS: 192.168.102.102 has 9347 MB free on /var
+PASS: 192.168.102.103 has 9348 MB free on /var
+PASS: Latency from 192.168.102.101 to 192.168.102.102 is 399 μs
+PASS: Latency from 192.168.102.101 to 192.168.102.103 is 221 μs
+PASS: Latency from 192.168.102.102 to 192.168.102.101 is 1062 μs
+PASS: Latency from 192.168.102.102 to 192.168.102.103 is 310 μs
+PASS: Latency from 192.168.102.103 to 192.168.102.101 is 260 μs
+PASS: Latency from 192.168.102.103 to 192.168.102.102 is 279 μs
+FAIL: Cannot connect from 192.168.102.101 to 192.168.102.102:9001
 ```
 
 # Notes
-
  * The output is actually colored, red for bad, green for good. Unfortunately this is not possible to show in markdown.
  * Ports can be configured at the top of `go.sh`. The various minimum requirements can be changed just below them.
