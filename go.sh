@@ -9,6 +9,7 @@ MIN_DOCKER=1.13.1
 MIN_KERNEL=3.10.0
 MIN_RAM=7719
 MIN_VAR=2048
+MAX_PING=10000
 
 kubectl apply -f - <<EOF
 apiVersion: v1
@@ -27,8 +28,9 @@ until kubectl get ds nc -n kube-system --no-headers | awk '{if ($2!=$4) exit(1);
   echo waiting for nc pods
   sleep 1
 done
+NC_PODS=$(kubectl get pods -lname=nc -n kube-system --no-headers -o custom-columns=NAME:.metadata.name)
 while : ; do
-  ready=$(kubectl logs -n kube-system -lname=nc --tail=-1 | grep READY | wc -l)
+  ready=$(for p in $NC_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep READY | wc -l)
   echo $ready of $(wc -w <<<$NODES) nodes ready
   [ $ready -eq $(wc -w <<<$NODES) ] && break
   sleep 1
@@ -40,17 +42,18 @@ until kubectl get ds node -n kube-system --no-headers | awk '{if ($2!=$4) exit(1
   sleep 1
 done
 
+NODE_PODS=$(kubectl get pods -lname=node -n kube-system --no-headers -o custom-columns=NAME:.metadata.name)
 while : ; do
-  done=$(kubectl logs -n kube-system -lname=node --tail=-1 | grep COMPLETE | wc -l)
+  done=$(for p in $NODE_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep COMPLETE | wc -l)
   echo $done of $(wc -w <<<$NODES) nodes done
   [ $done -eq $(wc -w <<<$NODES) ] && break
   sleep 1
 done
 
 cd /var/tmp
-kubectl logs -n kube-system -lname=nc --tail=-1 | grep NC: | sed s/NC:// | sort >preflight.nc
-for i in SWAP CPU RAM VAR KERNEL DOCKER; do
-  kubectl logs -n kube-system -lname=node --tail=-1 | grep $i: | sed s/$i:// | sort >preflight.node.$i
+for p in $NC_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep NC: | sed s/NC:// | sort >preflight.nc
+for i in SWAP CPU RAM VAR KERNEL DOCKER PING; do
+  for p in $NODE_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep $i: | sed s/$i:// | sort >preflight.node.$i
 done
 
 kubectl delete cm preflight-config -n kube-system
@@ -122,9 +125,19 @@ while IFS=: read host n; do
   echo $host has $n MB free on /var
 done <preflight.node.VAR
 
+while IFS=: read src dest n; do
+  if [ $MAX_PING -lt $n ]; then
+    echo -ne $RED
+  else
+    echo -ne $GREEN
+  fi
+  echo Latency from $src to $dest is $n μs
+done <preflight.node.PING
+
 for a in $NODES; do
   for b in $(seq $START_PORT $END_PORT); do
     for c in $NODES; do
+      [ $a = $c ] && continue
       echo "$a:$b:$c"
     done
   done
