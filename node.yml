@@ -17,8 +17,9 @@ data:
       fi
       echo PING:$(hostname -i):$i:$t
       for p in $(seq $START_PORT $END_PORT); do
-        hostname -i | nc -w 1 $i $p
+        echo $(hostname -i):TCP | nc -w 1 $i $p
       done
+      echo $(hostname -i):UDP | nc -uw 1 $i $(echo $START_PORT+1 | bc)
     done
     echo SWAP:$(hostname -i):$(tail +2 /proc/swaps | wc -l)
     echo CPU:$(hostname -i):$(grep -c processor /proc/cpuinfo)

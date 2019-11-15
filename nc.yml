@@ -8,8 +8,9 @@ data:
     #!/bin/sh
     apk add netcat-openbsd sed
     for i in $(seq $START_PORT $END_PORT); do
-      nc -lk $i | sed -u "s/^/NC:$(hostname -i):$i:/" &
+      nc -lk $i | sed -u s/^/NC:$(hostname -i):$i:/ &
     done
+    nc -ukl $(echo $START_PORT+1 | bc) | sed -u s/^/NC:$(hostname -i):$(echo $START_PORT+1 | bc):/ &
     sleep 1
     echo READY
     sleep 1d

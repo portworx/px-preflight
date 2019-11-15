@@ -65,7 +65,7 @@ kubectl delete ds nc -n kube-system
 FAIL='\033[0;31mFAIL: '
 PASS='\033[0;32mPASS: '
 RESET='\033[0m'
-echo SUMMARY
+echo -e "\033[0;33mSUMMARY"
 echo -------
 
 while IFS=: read host n; do
@@ -139,13 +139,17 @@ while IFS=: read src dest n; do
 done <preflight.node.PING
 
 for a in $NODES; do
+  for c in $NODES; do
+    [ $a = $c ] && continue
+    echo "$a:$[START_PORT+1]:$c:UDP"
+  done
   for b in $(seq $START_PORT $END_PORT); do
     for c in $NODES; do
       [ $a = $c ] && continue
-      echo "$a:$b:$c"
+      echo "$a:$b:$c:TCP"
     done
   done
-done >/var/tmp/preflight.nc.desired
+done | sort >/var/tmp/preflight.nc.desired
 comm -23 /var/tmp/preflight.nc.desired /var/tmp/preflight.nc | while IFS=: read dest port src; do
   echo -e "${FAIL}Cannot connect from $src to $dest:$port"
 done
