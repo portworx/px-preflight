@@ -126,12 +126,16 @@ while IFS=: read host n; do
 done <preflight.node.VAR
 
 while IFS=: read src dest n; do
-  if [ $MAX_PING -lt $n ]; then
-    echo -ne "$FAIL"
+  if [ $n == fail ]; then
+    echo -e "${FAIL}Ping failure from $src to $dest"
   else
-    echo -ne "$PASS"
+    if [ $MAX_PING -lt $n ]; then
+      echo -ne "$FAIL"
+    else
+      echo -ne "$PASS"
+    fi
+    echo Latency from $src to $dest is $n μs
   fi
-  echo Latency from $src to $dest is $n μs
 done <preflight.node.PING
 
 for a in $NODES; do

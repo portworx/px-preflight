@@ -9,9 +9,15 @@ data:
     apk add jq curl
     for i in $NODES; do
       [ $(hostname -i) = $i ] && continue
-      echo PING:$(hostname -i):$i:$(echo 1000*$(ping -qc 4 $i | tail -1 | cut -f 4 -d /) | bc | cut -f 1 -d .)
+      t=$(ping -qc 4 -w 5 $i | grep avg | cut -f 4 -d /)
+      if [ $t ]; then
+        t=$(echo 1000*$t | bc | cut -f 1 -d .)
+      else
+        t=fail
+      fi
+      echo PING:$(hostname -i):$i:$t
       for p in $(seq $START_PORT $END_PORT); do
-        hostname -i | nc $i $p
+        hostname -i | nc -w 1 $i $p
       done
     done
     echo SWAP:$(hostname -i):$(tail +2 /proc/swaps | wc -l)
