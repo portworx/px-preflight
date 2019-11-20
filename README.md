@@ -38,21 +38,37 @@ Unpacking objects: 100% (23/23), done.
 configmap/preflight-config created
 configmap/nc-script created
 daemonset.apps/nc created
-waiting for nc pods
-waiting for nc pods
-waiting for nc pods
-3 of 3 nodes ready
+pod/nc-k8v4r condition met
+pod/nc-php7l condition met
+pod/nc-v282l condition met
 configmap/node-script created
 daemonset.apps/node created
-waiting for node pods
-waiting for node pods
-waiting for node pods
+pod/node-4wt4g condition met
+pod/node-jdzzn condition met
+pod/node-tdtvv condition met
+0 of 3 nodes done
+0 of 3 nodes done
+0 of 3 nodes done
+0 of 3 nodes done
+0 of 3 nodes done
+0 of 3 nodes done
+0 of 3 nodes done
+0 of 3 nodes done
+0 of 3 nodes done
+2 of 3 nodes done
 3 of 3 nodes done
-configmap "preflight-config" deleted
+configmap/preflight-output created
+configmap/preflight-job-script created
+job.batch/preflight-job created
+job.batch/preflight-job condition met
 configmap "node-script" deleted
 configmap "nc-script" deleted
 daemonset.apps "node" deleted
 daemonset.apps "nc" deleted
+configmap "preflight-output" deleted
+configmap "preflight-config" deleted
+configmap "preflight-job-script" deleted
+job.batch "preflight-job" deleted
 SUMMARY
 -------
 FAIL: 192.168.102.101 has 2 CPUs

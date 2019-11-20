@@ -1,0 +1,162 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: preflight-job-script
+  namespace: kube-system
+data:
+  entrypoint.sh: |-
+    #!/bin/sh
+
+    MIN_CORES=4
+    MIN_DOCKER=1.13.1
+    MIN_KERNEL=3.10.0
+    MIN_RAM=7719
+    MIN_VAR=2048
+    MAX_PING=10000
+
+    FAIL='\033[0;31mFAIL: '
+    PASS='\033[0;32mPASS: '
+    RESET='\033[0m'
+
+    apk add coreutils >/dev/null
+
+    echo -e "\033[0;33mSUMMARY"
+    echo -------
+
+    grep ^CPU: preflight | while IFS=: read x host n; do
+      if [ $MIN_CORES -gt $n ]; then
+        echo -ne "$FAIL"
+      else
+        echo -ne "$PASS"
+      fi
+      echo $host has $n CPUs
+    done
+    
+    MIN_DOCKER=$(echo $MIN_DOCKER | sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g')
+    grep ^DOCKER: preflight | while IFS=: read x host n; do
+      m=$(echo $n | sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g')
+      if [ $m \< $MIN_DOCKER ]; then
+        echo -ne "$FAIL"
+      else
+        echo -ne "$PASS"
+      fi
+      echo $host is running Docker $n
+    done
+
+    MIN_KERNEL=$(echo $MIN_KERNEL | sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g')
+    grep ^KERNEL: preflight | while IFS=: read x host n; do
+      m=$(echo $n | sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g')
+      if [ $m \< $MIN_KERNEL ]; then
+        echo -ne "$FAIL"
+      else
+        echo -ne "$PASS"
+      fi
+      echo $host is running kernel $n
+    done
+
+    grep ^RAM: preflight | while IFS=: read x host n; do
+      if [ $MIN_RAM -gt $n ]; then
+        echo -ne "$FAIL"
+      else
+        echo -ne "$PASS"
+      fi
+      echo $host has $n MB RAM
+    done
+
+    grep ^SWAP: preflight | while IFS=: read x host n; do
+      if [ $n -gt 0 ]; then
+        echo -e "$FAIL$host has swap"
+      else
+        echo -e "$PASS$host has no swap"
+      fi
+    done
+
+    grep ^VAR: preflight | while IFS=: read x host n; do
+      if [ $MIN_VAR -gt $n ]; then
+        echo -ne "$FAIL"
+      else
+        echo -ne "$PASS"
+      fi
+      echo $host has $n MB free on /var
+    done
+
+    grep ^PING: preflight | while IFS=: read x src dest n; do
+      if [ $n == fail ]; then
+        echo -e "${FAIL}Ping failure from $src to $dest"
+      else
+        if [ $MAX_PING -lt $n ]; then
+          echo -ne "$FAIL"
+        else
+          echo -ne "$PASS"
+        fi
+        echo Latency from $src to $dest is $n μs
+      fi
+    done
+
+    for a in $NODES; do
+      for c in $NODES; do
+        [ $a = $c ] && continue
+        echo "$a:$(echo $START_PORT+1 | bc):$c:UDP"
+      done
+      for b in $(seq $START_PORT $END_PORT); do
+        for c in $NODES; do
+          [ $a = $c ] && continue
+          echo "$a:$b:$c:TCP"
+        done
+      done
+    done | sed s/^/NC:/ | sort >desired
+    comm -23 --nocheck-order desired preflight | while IFS=: read x dest port src; do
+      echo -e "${FAIL}Cannot connect from $src to $dest:$port"
+    done
+
+    echo -ne $RESET
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: preflight-job
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      terminationGracePeriodSeconds: 0
+      hostNetwork: true
+      volumes:
+      - name: preflight-job-script
+        configMap:
+          defaultMode: 0700
+          name: preflight-job-script
+      - name: preflight-output
+        configMap:
+          name: preflight-output
+      restartPolicy: Never
+      containers:
+      - name: preflight-job
+        image: alpine:latest
+        command:
+        - /entrypoint.sh
+        volumeMounts:
+        - name: preflight-job-script
+          mountPath: /entrypoint.sh
+          readOnly: true
+          subPath: entrypoint.sh
+        - name: preflight-output
+          mountPath: /preflight
+          readOnly: true
+          subPath: preflight
+        env:
+          - name: START_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: preflight-config
+                key: start_port
+          - name: END_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: preflight-config
+                key: end_port
+          - name: NODES
+            valueFrom:
+              configMapKeyRef:
+                name: preflight-config
+                key: nodes

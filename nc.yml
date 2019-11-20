@@ -12,7 +12,7 @@ data:
     done
     nc -ukl $(echo $START_PORT+1 | bc) | sed -u s/^/NC:$(hostname -i):$(echo $START_PORT+1 | bc):/ &
     sleep 1
-    echo READY
+    touch /ready
     sleep 1d
 ---
 apiVersion: apps/v1
@@ -56,6 +56,13 @@ spec:
           image: alpine:latest
           command:
           - /entrypoint.sh
+          readinessProbe:
+            exec:
+              command:
+              - cat
+              - /ready
+            initialDelaySeconds: 1
+            periodSeconds: 1
           volumeMounts:
           - name: nc-script
             mountPath: /entrypoint.sh

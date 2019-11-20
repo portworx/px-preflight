@@ -4,13 +4,6 @@ START_PORT=9001
 END_PORT=9022
 NODES=$(kubectl get nodes -o wide -l 'px/enabled!=false,!node-role.kubernetes.io/master' --no-headers | awk '{print$6}')
 
-MIN_CORES=4
-MIN_DOCKER=1.13.1
-MIN_KERNEL=3.10.0
-MIN_RAM=7719
-MIN_VAR=2048
-MAX_PING=10000
-
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: ConfigMap
@@ -24,24 +17,11 @@ data:
 EOF
 
 kubectl apply -f nc.yml
-until kubectl get ds nc -n kube-system --no-headers | awk '{if ($2!=$4) exit(1);}'; do
-  echo waiting for nc pods
-  sleep 1
-done
+kubectl wait pod -lname=nc --for=condition=ready -n kube-system
 NC_PODS=$(kubectl get pods -lname=nc -n kube-system --no-headers -o custom-columns=NAME:.metadata.name)
-while : ; do
-  ready=$(for p in $NC_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep READY | wc -l)
-  echo $ready of $(wc -w <<<$NODES) nodes ready
-  [ $ready -eq $(wc -w <<<$NODES) ] && break
-  sleep 1
-done
 
 kubectl apply -f node.yml
-until kubectl get ds node -n kube-system --no-headers | awk '{if ($2!=$4) exit(1);}'; do
-  echo waiting for node pods
-  sleep 1
-done
-
+kubectl wait pod -lname=node --for=condition=ready -n kube-system
 NODE_PODS=$(kubectl get pods -lname=node -n kube-system --no-headers -o custom-columns=NAME:.metadata.name)
 while : ; do
   done=$(for p in $NODE_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep COMPLETE | wc -l)
@@ -50,108 +30,23 @@ while : ; do
   sleep 1
 done
 
-cd /var/tmp
-for p in $NC_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep NC: | sed s/NC:// | sort >preflight.nc
-for i in SWAP CPU RAM VAR KERNEL DOCKER PING; do
-  for p in $NODE_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep $i: | sed s/$i:// | sort >preflight.node.$i
-done
+for p in $NC_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep ^NC: | sort >/var/tmp/preflight
+for p in $NODE_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep ^PF: | sed s/^PF:// | sort >>/var/tmp/preflight
+kubectl create cm preflight-output --from-file /var/tmp/preflight -n kube-system
 
-kubectl delete cm preflight-config -n kube-system
+kubectl apply -f job.yml
+kubectl wait --for=condition=complete job/preflight-job -n kube-system
+JOB_POD=$(kubectl get pods -ljob-name=preflight-job -n kube-system --no-headers -o custom-columns=NAME:.metadata.name)
+kubectl logs $JOB_POD -n kube-system --tail=-1 >/var/tmp/preflight
+
 kubectl delete cm node-script -n kube-system
 kubectl delete cm nc-script -n kube-system
 kubectl delete ds node -n kube-system
 kubectl delete ds nc -n kube-system
+kubectl delete cm preflight-output -n kube-system
+kubectl delete cm preflight-config -n kube-system
+kubectl delete cm preflight-job-script -n kube-system
+kubectl delete job preflight-job -n kube-system
 
-FAIL='\033[0;31mFAIL: '
-PASS='\033[0;32mPASS: '
-RESET='\033[0m'
-echo -e "\033[0;33mSUMMARY"
-echo -------
-
-while IFS=: read host n; do
-  if [ $MIN_CORES -gt $n ]; then
-    echo -ne "$FAIL"
-  else
-    echo -ne "$PASS"
-  fi
-  echo $host has $n CPUs
-done <preflight.node.CPU
-
-MIN_DOCKER=$(sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g' <<<$MIN_DOCKER)
-while IFS=: read host n; do
-  m=$(sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g' <<<$n)
-  if [ $m \< $MIN_DOCKER ]; then
-    echo -ne "$FAIL"
-  else
-    echo -ne "$PASS"
-  fi
-  echo $host is running Docker $n
-done <preflight.node.DOCKER
-
-MIN_KERNEL=$(sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g' <<<$MIN_KERNEL)
-while IFS=: read host n; do
-  m=$(sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g' <<<$n)
-  if [ $m \< $MIN_KERNEL ]; then
-    echo -ne "$FAIL"
-  else
-    echo -ne "$PASS"
-  fi
-  echo $host is running kernel $n
-done <preflight.node.KERNEL
-
-while IFS=: read host n; do
-  if [ $MIN_RAM -gt $n ]; then
-    echo -ne "$FAIL"
-  else
-    echo -ne "$PASS"
-  fi
-  echo $host has $n MB RAM
-done <preflight.node.RAM
-
-while IFS=: read host n; do
-  if [ $n -gt 0 ]; then
-    echo -e "$FAIL$host has swap"
-  else
-    echo -e "$PASS$host has no swap"
-  fi
-done <preflight.node.SWAP
-
-while IFS=: read host n; do
-  if [ $MIN_VAR -gt $n ]; then
-    echo -ne "$FAIL"
-  else
-    echo -ne "$PASS"
-  fi
-  echo $host has $n MB free on /var
-done <preflight.node.VAR
-
-while IFS=: read src dest n; do
-  if [ $n == fail ]; then
-    echo -e "${FAIL}Ping failure from $src to $dest"
-  else
-    if [ $MAX_PING -lt $n ]; then
-      echo -ne "$FAIL"
-    else
-      echo -ne "$PASS"
-    fi
-    echo Latency from $src to $dest is $n μs
-  fi
-done <preflight.node.PING
-
-for a in $NODES; do
-  for c in $NODES; do
-    [ $a = $c ] && continue
-    echo "$a:$[START_PORT+1]:$c:UDP"
-  done
-  for b in $(seq $START_PORT $END_PORT); do
-    for c in $NODES; do
-      [ $a = $c ] && continue
-      echo "$a:$b:$c:TCP"
-    done
-  done
-done | sort >/var/tmp/preflight.nc.desired
-comm -23 /var/tmp/preflight.nc.desired /var/tmp/preflight.nc | while IFS=: read dest port src; do
-  echo -e "${FAIL}Cannot connect from $src to $dest:$port"
-done
-
-echo -ne $RESET
+cat /var/tmp/preflight
+rm -f /var/tmp/preflight
