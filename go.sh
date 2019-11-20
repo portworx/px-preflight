@@ -4,6 +4,13 @@ START_PORT=9001
 END_PORT=9022
 NODES=$(kubectl get nodes -o wide -l 'px/enabled!=false,!node-role.kubernetes.io/master' --no-headers | awk '{print$6}')
 
+MIN_CORES=4
+MIN_DOCKER=1.13.1
+MIN_KERNEL=3.10.0
+MIN_RAM=7719
+MIN_VAR=2048
+MAX_PING=10000
+
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: ConfigMap
@@ -14,6 +21,12 @@ data:
   start_port: "$START_PORT"
   end_port: "$END_PORT"
   nodes: "$NODES"
+  min_cores: "$MIN_CORES"
+  min_docker: "$MIN_DOCKER"
+  min_kernel: "$MIN_KERNEL"
+  min_ram: "$MIN_RAM"
+  min_var: "$MIN_VAR"
+  max_ping: "$MAX_PING"
 EOF
 
 kubectl apply -f nc.yml

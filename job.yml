@@ -7,13 +7,6 @@ data:
   entrypoint.sh: |-
     #!/bin/sh
 
-    MIN_CORES=4
-    MIN_DOCKER=1.13.1
-    MIN_KERNEL=3.10.0
-    MIN_RAM=7719
-    MIN_VAR=2048
-    MAX_PING=10000
-
     FAIL='\033[0;31mFAIL: '
     PASS='\033[0;32mPASS: '
     RESET='\033[0m'
@@ -160,3 +153,33 @@ spec:
               configMapKeyRef:
                 name: preflight-config
                 key: nodes
+          - name: MIN_CORES
+            valueFrom:
+              configMapKeyRef:
+                name: preflight-config
+                key: min_cores
+          - name: MIN_DOCKER
+            valueFrom:
+              configMapKeyRef:
+                name: preflight-config
+                key: min_docker
+          - name: MIN_KERNEL
+            valueFrom:
+              configMapKeyRef:
+                name: preflight-config
+                key: min_kernel
+          - name: MIN_RAM
+            valueFrom:
+              configMapKeyRef:
+                name: preflight-config
+                key: min_ram
+          - name: MIN_VAR
+            valueFrom:
+              configMapKeyRef:
+                name: preflight-config
+                key: min_var
+          - name: MAX_PING
+            valueFrom:
+              configMapKeyRef:
+                name: preflight-config
+                key: max_ping
