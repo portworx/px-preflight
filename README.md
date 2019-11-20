@@ -1,6 +1,6 @@
 # What
 
-This will provision some DaemonSets on your Kubernetes cluster, use them to run some basic checks, and then delete them again. Checks include:
+This will provision some DaemonSets on your Kubernetes cluster, use them to run some basic checks, provision a job to process the output, and then delete everything. Checks include:
  * CPU cores
  * Docker version
  * Kernel version
