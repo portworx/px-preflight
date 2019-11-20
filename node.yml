@@ -28,6 +28,7 @@ data:
     echo PF:KERNEL:$(hostname -i):$(uname -r)
     echo PF:DOCKER:$(hostname -i):$(curl -s --unix-socket /var/run/docker.sock http://dummy/version | jq -r .Version)
     echo COMPLETE
+    touch /ready
     sleep 1d
 ---
 apiVersion: apps/v1
@@ -78,6 +79,11 @@ spec:
           image: alpine:latest
           command:
           - /entrypoint.sh
+          readinessProbe:
+            exec:
+              command:
+              - cat
+              - /ready
           volumeMounts:
           - name: node-script
             mountPath: /entrypoint.sh

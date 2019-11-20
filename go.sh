@@ -36,12 +36,6 @@ NC_PODS=$(kubectl get pods -lname=nc -n kube-system --no-headers -o custom-colum
 kubectl apply -f node.yml
 kubectl wait pod -lname=node --for=condition=ready -n kube-system
 NODE_PODS=$(kubectl get pods -lname=node -n kube-system --no-headers -o custom-columns=NAME:.metadata.name)
-while : ; do
-  done=$(for p in $NODE_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep COMPLETE | wc -l)
-  echo $done of $(wc -w <<<$NODES) nodes done
-  [ $done -eq $(wc -w <<<$NODES) ] && break
-  sleep 1
-done
 
 for p in $NC_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep ^NC: | sort >/var/tmp/preflight
 for p in $NODE_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep ^PF: | sed s/^PF:// | sort >>/var/tmp/preflight

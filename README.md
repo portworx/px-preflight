@@ -38,25 +38,14 @@ Unpacking objects: 100% (23/23), done.
 configmap/preflight-config created
 configmap/nc-script created
 daemonset.apps/nc created
-pod/nc-k8v4r condition met
-pod/nc-php7l condition met
-pod/nc-v282l condition met
+pod/nc-hp2hb condition met
+pod/nc-p9284 condition met
+pod/nc-w4kd8 condition met
 configmap/node-script created
 daemonset.apps/node created
-pod/node-4wt4g condition met
-pod/node-jdzzn condition met
-pod/node-tdtvv condition met
-0 of 3 nodes done
-0 of 3 nodes done
-0 of 3 nodes done
-0 of 3 nodes done
-0 of 3 nodes done
-0 of 3 nodes done
-0 of 3 nodes done
-0 of 3 nodes done
-0 of 3 nodes done
-2 of 3 nodes done
-3 of 3 nodes done
+pod/node-4jw52 condition met
+pod/node-bjc4q condition met
+pod/node-m48sp condition met
 configmap/preflight-output created
 configmap/preflight-job-script created
 job.batch/preflight-job created
