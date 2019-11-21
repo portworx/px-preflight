@@ -40,12 +40,12 @@ Unpacking objects: 100% (23/23), done.
 [root@master-2 px-preflight]# vi go.sh
 ```
 
- * Configure the port range with START_PORT and END_PORT
- * Verify the NODES variable is being populated according to your infrastructure
- * Set TCP_CHECKS for any external services that need to be reached from all of the Portworx nodes, for example: external etcd, objectstore
- * The default MIN and MAX thresholds should be fine for most use-cases
+ * Configure the port range with `START_PORT` and `END_PORT`
+ * Verify the `NODES` variable is being populated according to your infrastructure
+ * Set `TCP_CHECKS` for any external services that need to be reached from all of the Portworx nodes, for example: external etcd, objectstore
+ * The default `MIN` and `MAX` thresholds should be fine for most use-cases
 
-3. cd and run:
+4. Run:
 ```
 [root@master-2 px-preflight]# sh go.sh
 configmap/preflight-config created
