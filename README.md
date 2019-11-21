@@ -1,6 +1,7 @@
 # What
 
 This will provision some DaemonSets on your Kubernetes cluster, use them to run some basic checks, provision a job to process the output, and then delete everything. Checks include:
+ * Kubernetes version
  * CPU cores
  * Docker version
  * Kernel version
@@ -8,6 +9,7 @@ This will provision some DaemonSets on your Kubernetes cluster, use them to run 
  * /var space
  * Network connectivity between all worker nodes in the defined port range
  * Ping latency
+ * Block devices
 
 # How
 
@@ -60,6 +62,7 @@ configmap "preflight-job-script" deleted
 job.batch "preflight-job" deleted
 SUMMARY
 -------
+PASS: Cluster is running Kubernetes 1.16.3
 FAIL: 192.168.102.101 has 2 CPUs
 FAIL: 192.168.102.102 has 2 CPUs
 FAIL: 192.168.102.103 has 2 CPUs
@@ -78,6 +81,9 @@ PASS: 192.168.102.103 has no swap
 PASS: 192.168.102.101 has 9245 MB free on /var
 PASS: 192.168.102.102 has 9347 MB free on /var
 PASS: 192.168.102.103 has 9348 MB free on /var
+192.168.101.101 has device nvme1n1 (20 GB) (disk)
+192.168.101.102 has device nvme1n1 (20 GB) (disk)
+192.168.101.103 has device nvme1n1 (20 GB) (disk)
 PASS: Latency from 192.168.102.101 to 192.168.102.102 is 399 μs
 PASS: Latency from 192.168.102.101 to 192.168.102.103 is 221 μs
 PASS: Latency from 192.168.102.102 to 192.168.102.101 is 1062 μs
