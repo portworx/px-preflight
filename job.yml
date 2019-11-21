@@ -97,6 +97,10 @@ data:
       fi
     done
 
+    grep ^BLK: preflight | while IFS=: read x host name size type; do
+      echo -e "${RESET}$host has device $name ($size GB) ($type)"
+    done
+
     for a in $NODES; do
       for c in $NODES; do
         [ $a = $c ] && continue

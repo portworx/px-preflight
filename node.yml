@@ -6,7 +6,7 @@ metadata:
 data:
   entrypoint.sh: |-
     #!/bin/sh
-    apk add jq curl
+    apk add jq curl util-linux
     for i in $NODES; do
       [ $(hostname -i) = $i ] && continue
       t=$(ping -qc 4 -w 5 $i | grep avg | cut -f 4 -d /)
@@ -27,7 +27,11 @@ data:
     echo PF:VAR:$(hostname -i):$(df -m /host-var | tail -1 | awk '{print$4}')
     echo PF:KERNEL:$(hostname -i):$(uname -r)
     echo PF:DOCKER:$(hostname -i):$(curl -s --unix-socket /var/run/docker.sock http://dummy/version | jq -r .Version)
-    echo COMPLETE
+    lsblk -dnsb -o NAME,SIZE,TYPE,MOUNTPOINT | while read n s t m; do
+      [ $m ] && continue
+      s=$(echo $s/1073741824 | bc)
+      echo PF:BLK:$(hostname -i):$n:$s:$t
+    done
     touch /ready
     sleep 1d
 ---
