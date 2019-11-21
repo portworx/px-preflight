@@ -94,7 +94,7 @@ PASS: 192.168.102.102 has 9347 MB free on /var
 PASS: 192.168.102.103 has 9348 MB free on /var
 FAIL: Cannot connect from 192.168.102.101 to 192.168.1.1:2379
 FAIL: Cannot connect from 192.168.102.102 to 192.168.1.1:2379
-FAIL: Cannot connect from 192.168.101.103 to 192.168.1.1:2379
+FAIL: Cannot connect from 192.168.102.103 to 192.168.1.1:2379
 PASS: Can connect from 192.168.102.101 to 192.168.1.2:2379
 PASS: Can connect from 192.168.102.102 to 192.168.1.2:2379
 PASS: Can connect from 192.168.102.103 to 192.168.1.2:2379
