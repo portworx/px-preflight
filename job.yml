@@ -16,6 +16,17 @@ data:
     echo -e "\033[0;33mSUMMARY"
     echo -------
 
+    MIN_K8S=$(echo $MIN_K8S | sed 's/^\([0-9]*\.[0-9]*\)\..*/\1/; s/\<[0-9]\>/0&/g')
+    grep ^K8S_VER: preflight | while IFS=: read x n; do
+      m=$(echo $n | sed 's/^\([0-9]*\.[0-9]*\)\..*/\1/; s/\<[0-9]\>/0&/g')
+      if [ $m \< $MIN_K8S ]; then
+        echo -ne "$FAIL"
+      else
+        echo -ne "$PASS"
+      fi
+      echo Cluster is running Kubernetes $n
+    done
+
     grep ^CPU: preflight | while IFS=: read x host n; do
       if [ $MIN_CORES -gt $n ]; then
         echo -ne "$FAIL"
@@ -153,6 +164,11 @@ spec:
               configMapKeyRef:
                 name: preflight-config
                 key: nodes
+          - name: MIN_K8S
+            valueFrom:
+              configMapKeyRef:
+                name: preflight-config
+                key: min_k8s
           - name: MIN_CORES
             valueFrom:
               configMapKeyRef:

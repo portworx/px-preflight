@@ -4,6 +4,7 @@ START_PORT=9001
 END_PORT=9022
 NODES=$(kubectl get nodes -o wide -l 'px/enabled!=false,!node-role.kubernetes.io/master' --no-headers | awk '{print$6}')
 
+MIN_K8S=1.10
 MIN_CORES=4
 MIN_DOCKER=1.13.1
 MIN_KERNEL=3.10.0
@@ -21,6 +22,7 @@ data:
   start_port: "$START_PORT"
   end_port: "$END_PORT"
   nodes: "$NODES"
+  min_k8s: "$MIN_K8S"
   min_cores: "$MIN_CORES"
   min_docker: "$MIN_DOCKER"
   min_kernel: "$MIN_KERNEL"
@@ -39,6 +41,7 @@ NODE_PODS=$(kubectl get pods -lname=node -n kube-system --no-headers -o custom-c
 
 for p in $NC_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep ^NC: | sort >/var/tmp/preflight
 for p in $NODE_PODS; do kubectl logs $p -n kube-system --tail=-1; done | grep ^PF: | sed s/^PF:// | sort >>/var/tmp/preflight
+kubectl version --short | awk -Fv '/Server Version: / {print $3}' | sed s/^/K8S_VER:/ >>/var/tmp/preflight
 kubectl create cm preflight-output --from-file /var/tmp/preflight -n kube-system
 
 kubectl apply -f job.yml
