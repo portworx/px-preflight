@@ -102,7 +102,7 @@ PASS: Latency from 192.168.102.102 to 192.168.102.101 is 1062 μs
 PASS: Latency from 192.168.102.102 to 192.168.102.103 is 310 μs
 PASS: Latency from 192.168.102.103 to 192.168.102.101 is 260 μs
 PASS: Latency from 192.168.102.103 to 192.168.102.102 is 279 μs
-FAIL: Cannot connect from 192.168.102.101 to 192.168.102.102:9001
+FAIL: Cannot connect from 192.168.102.101 to 192.168.102.102 on 9001/TCP
 ```
 
 # Notes

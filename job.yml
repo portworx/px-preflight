@@ -121,8 +121,8 @@ data:
         done
       done
     done | sed s/^/NC:/ | sort >desired
-    comm -23 --nocheck-order desired preflight | while IFS=: read x dest port src; do
-      echo -e "${FAIL}Cannot connect from $src to $dest:$port"
+    comm -23 --nocheck-order desired preflight | while IFS=: read x dest port src proto; do
+      echo -e "${FAIL}Cannot connect from $src to $dest on $port/$proto"
     done
 
     echo -ne $RESET
