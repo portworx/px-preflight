@@ -21,6 +21,12 @@ data:
       done
       echo $(hostname -i):UDP | nc -uw 1 $i $(echo $START_PORT+1 | bc)
     done
+    for i in $TCP_CHECKS; do
+      echo $i | while IFS=: read h p; do
+        nc -w 1 $h $p </dev/null >/dev/null
+        echo PF:TCP:$(hostname -i):$h:$p:$?
+      done
+    done
     echo PF:SWAP:$(hostname -i):$(tail +2 /proc/swaps | wc -l)
     echo PF:CPU:$(hostname -i):$(grep -c processor /proc/cpuinfo)
     echo PF:RAM:$(hostname -i):$(free -m | awk '/Mem/{print$2}')
@@ -113,3 +119,8 @@ spec:
                 configMapKeyRef:
                   name: preflight-config
                   key: nodes
+            - name: TCP_CHECKS
+              valueFrom:
+                configMapKeyRef:
+                  name: preflight-config
+                  key: tcp_checks

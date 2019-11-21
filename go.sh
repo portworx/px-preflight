@@ -3,6 +3,7 @@
 START_PORT=9001
 END_PORT=9022
 NODES=$(kubectl get nodes -o wide -l 'px/enabled!=false,!node-role.kubernetes.io/master' --no-headers | awk '{print$6}')
+#TCP_CHECKS="192.168.1.1:2379 192.168.1.2:2379 192.168.1.3:2379"
 
 MIN_K8S=1.10
 MIN_CORES=4
@@ -22,6 +23,7 @@ data:
   start_port: "$START_PORT"
   end_port: "$END_PORT"
   nodes: "$NODES"
+  tcp_checks: "$TCP_CHECKS"
   min_k8s: "$MIN_K8S"
   min_cores: "$MIN_CORES"
   min_docker: "$MIN_DOCKER"

@@ -10,6 +10,7 @@ This will provision some DaemonSets on your Kubernetes cluster, use them to run 
  * Network connectivity between all worker nodes in the defined port range
  * Ping latency
  * Block devices
+ * Optional TCP checks, eg objectstore, external etcd
 
 # How
 
@@ -33,9 +34,19 @@ remote: Total 23 (delta 8), reused 10 (delta 2), pack-reused 0
 Unpacking objects: 100% (23/23), done.
 ```
 
-3. cd and run:
+3. Configure:
 ```
 [root@master-2 ~]# cd px-preflight
+[root@master-2 px-preflight]# vi go.sh
+```
+
+ * Configure the port range with START_PORT and END_PORT
+ * Verify the NODES variable is being populated according to your infrastructure
+ * Set TCP_CHECKS for any external services that need to be reached from all of the Portworx nodes, for example: external etcd, objectstore
+ * The default MIN and MAX thresholds should be fine for most use-cases
+
+3. cd and run:
+```
 [root@master-2 px-preflight]# sh go.sh
 configmap/preflight-config created
 configmap/nc-script created
@@ -81,6 +92,7 @@ PASS: 192.168.102.103 has no swap
 PASS: 192.168.102.101 has 9245 MB free on /var
 PASS: 192.168.102.102 has 9347 MB free on /var
 PASS: 192.168.102.103 has 9348 MB free on /var
+FAIL: Cannot connect from 192.168.101.102 to 192.168.1.1:2379
 192.168.101.101 has device nvme1n1 (20 GB) (disk)
 192.168.101.102 has device nvme1n1 (20 GB) (disk)
 192.168.101.103 has device nvme1n1 (20 GB) (disk)
@@ -95,4 +107,3 @@ FAIL: Cannot connect from 192.168.102.101 to 192.168.102.102:9001
 
 # Notes
  * The output is actually colored, red for bad, green for good. Unfortunately this is not possible to show in markdown.
- * Ports can be configured at the top of `go.sh`. The various minimum requirements can be changed just below them.
