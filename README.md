@@ -115,3 +115,12 @@ FAIL: Cannot connect from 192.168.102.101 to 192.168.102.102 on 9001/TCP
 
 # Notes
  * The output is actually colored, red for bad, green for good. Unfortunately this is not possible to show in markdown.
+
+# TODO
+ * Skip devices <2GB
+ * Confirm /opt and /var requirements
+ * Check devices unformatted
+ * Check for previous installs
+ * Specify network interfaces
+ * Test provisioning of cloud drives
+ * Check etcd secrets
