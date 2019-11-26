@@ -10,9 +10,7 @@ data:
     for i in $NODES; do
       [ $(hostname -i) = $i ] && continue
       t=$(ping -qc 4 -w 5 $i | grep avg | cut -f 4 -d /)
-      if [ $t ]; then
-        t=$(echo 1000*$t | bc | cut -f 1 -d .)
-      else
+      if [ ! $t ]; then
         t=fail
       fi
       echo PF:PING:$(hostname -i):$i:$t
@@ -36,7 +34,7 @@ data:
     lsblk -dnsb -o NAME,SIZE,TYPE,MOUNTPOINT | while read n s t m; do
       [ $m ] && continue
       s=$(echo $s/1073741824 | bc)
-      echo PF:BLK:$(hostname -i):$n:$s:$t
+      [ $s -ge 8 ] && echo PF:BLK:$(hostname -i):$n:$s:$t
     done
     touch /ready
     sleep 1d

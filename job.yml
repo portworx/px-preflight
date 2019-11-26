@@ -6,126 +6,171 @@ metadata:
 data:
   entrypoint.sh: |-
     #!/bin/sh
+    apk add perl >/dev/null
+    perl <<\EOF
+    use Term::ANSIColor qw(:constants);
+    use warnings;
+    use strict;
+    print YELLOW."SUMMARY\n";
+    print YELLOW."-------\n".RESET;
+    my ($k8s_ver, %table, %ping, %tcp, %nc);
+    open IN, "preflight";
+    while(<IN>) {
+      chomp;
+      my @line = split ':', $_;
+      my $label = shift @line;
+      if ($label eq "K8S_VER") {
+        $k8s_ver = shift @line;
+        next;
+      }
+      my $host = shift @line;
+      if ($label eq "BLK") {
+        push @{$table{$host}{$label}}, \@line;
+      } elsif ($label eq "PING") {
+        my ($dest, $time) = @line;
+        $ping{$host}{$dest} = $time;
+      } elsif ($label eq "TCP") {
+        my ($dest, $port, $n) = @line;
+        $tcp{$host}{$dest}{$port} = $n;
+      } elsif ($label eq "NC") {
+        my ($port, $src, $proto) = @line;
+        $nc{$host}{$port}{$src}{$proto}++;
+      } else {
+        $table{$host}{$label} = \@line;
+      }
+    }
+    close IN;
+    my ($pingfail, $tcpfail, $ncfail, $fail) = 0;
+    if (by_version($k8s_ver, $ENV{MIN_K8S}) < 0) {
+      print RED;
+      $fail++;
+    } else {
+      print GREEN;
+    }
+    print "Kubernetes is $k8s_ver (>=$ENV{MIN_K8S} required)\n \n".RESET;
+    print "-" x 137 . "\n";
+    printf "%-15s  %-5s  %-14s  %-26s  %-9s  %-8s  %-9s  %s\n", "Node", "Cores", "Docker version", "Kernel", "RAM", "Swap", "/var free", "Block devices";
+    print "-" x 137 . "\n";
+    for my$n (split " ", $ENV{NODES}) {
+      printf "%-15s  ", $n;
+      if ($table{$n}{CPU}[0] < $ENV{MIN_CORES}) {
+        print RED;
+        $fail++;
+      } else {
+        print GREEN;
+      }
+      printf "%-5s".RESET."  ", $table{$n}{CPU}[0];
+      if (by_version($table{$n}{DOCKER}[0], $ENV{MIN_DOCKER}) < 0) {
+        print RED;
+        $fail++;
+      } else {
+        print GREEN;
+      }
+      printf "%-14s", $table{$n}{DOCKER}[0];
+      print RESET."  ";
+      if (by_version($table{$n}{KERNEL}[0], $ENV{MIN_KERNEL}) < 0) {
+        print RED;
+        $fail++;
+      } else {
+        print GREEN;
+      }
+      printf "%-26s".RESET."  ", $table{$n}{KERNEL}[0];
+      if ($table{$n}{RAM}[0] < $ENV{MIN_RAM}) {
+        print RED;
+        $fail++;
+      } else {
+        print GREEN;
+      }
+      printf "%-9s".RESET."  ", "$table{$n}{RAM}[0]MB";
+      if ($table{$n}{SWAP}[0]) {
+        print RED."Enabled".RESET."  ";
+        $fail++;
+      } else {
+        print GREEN."Disabled".RESET."  ";
+      }
+      if ($table{$n}{VAR}[0] < $ENV{MIN_VAR}) {
+        print RED;
+        $fail++;
+      } else {
+        print GREEN;
+      }
+      printf "%-9s".RESET."  ", "$table{$n}{VAR}[0]MB";
+      foreach(0..$#{$table{$n}{BLK}}) {
+        print " " x 107 if ($_);
+        print "$table{$n}{BLK}->[$_]->[0] ($table{$n}{BLK}->[$_]->[1]GB) ($table{$n}{BLK}->[$_]->[2])\n";
+      }
+    }
+    print "-" x 137 . "\n";
+    print "\n \n";
+    print "Cores: >=$ENV{MIN_CORES} recommended\n";
+    print "Docker: >=$ENV{MIN_DOCKER} required\n";
+    print "Kernel: >=$ENV{MIN_KERNEL} required\n";
+    print "RAM: >=$ENV{MIN_RAM}MB recommended\n";
+    print "Swap must be disabled\n";
+    print "/var must have $ENV{MIN_VAR}MB free\n \n";
+    if ($fail) {
+      print RED."Some checks above failed\n \n".RESET;
+    } else {
+      print GREEN."All checks above passed\n \n".RESET;
+    }
+    foreach my$i (keys%ping) {
+      foreach my$j (keys%{$ping{$i}}) {
+        if ($ping{$i}{$j} < $ENV{MAX_PING}) {
+          delete $ping{$i}{$j};
+        } else {
+          $pingfail++;
+        }
+      }
+    }
+    foreach my$i (keys%tcp) {
+      foreach my$j (keys%{$tcp{$i}}) {
+        foreach my$k (keys%{$tcp{$i}{$j}}) {
+          if ($tcp{$i}{$j}{$k}) {
+            print RED."Connection failed from $i to $j:$k\n".RESET;
+            $tcpfail++;
+          }
+        }
+      }
+    }
+    if ($pingfail) {
+      print "Ping latency must be <$ENV{MAX_PING}ms:\n";
+      foreach my$i (keys%ping) {
+        foreach my$j (keys%{$ping{$i}}) {
+          print RED."Ping latency from $i to $j is $ping{$i}{$j}ms\n".RESET;
+        }
+      }
+    } else {
+      print GREEN."Ping checks passed (maximum latency $ENV{MAX_PING}ms)\n\n".RESET;
+    }
+    print GREEN."All external TCP checks passed ($ENV{TCP_CHECKS})\n".RESET if (scalar(keys%tcp) && !$tcpfail);
+    for my$d (split " ", $ENV{NODES}) {
+      for my$p ($ENV{START_PORT}..$ENV{END_PORT}) {
+        for my$s (split " ", $ENV{NODES}) {
+          next if ($s eq $d);
+          unless($nc{$d}{$p}{$s}{TCP}) {
+            print RED."Cannot connect from $s to $d:$p/tcp\n".RESET;
+            $ncfail++;
+          }
+          if ($p == $ENV{START_PORT} + 1 && !defined$nc{$d}{$p}{$s}{UDP}) {
+            print RED."Cannot connect from $s to $d:$p/udp\n".RESET;
+            $ncfail++;
+          }
+        }
+      }
+    }
+    print GREEN."All internal TCP checks passed\n \n".RESET unless($ncfail);
+    if ($pingfail || $tcpfail || $ncfail || $fail) {
+      print RED."Something failed - please fix and retry\n".RESET;
+    } else {
+      print GREEN."Success - please visit https://install.portworx.com/ to generate your spec\n".RESET;
+    }
 
-    FAIL='\033[0;31mFAIL: '
-    PASS='\033[0;32mPASS: '
-    RESET='\033[0m'
-
-    apk add coreutils >/dev/null
-
-    echo -e "\033[0;33mSUMMARY"
-    echo -------
-
-    MIN_K8S=$(echo $MIN_K8S | sed 's/^\([0-9]*\.[0-9]*\)\..*/\1/; s/\<[0-9]\>/0&/g')
-    grep ^K8S_VER: preflight | while IFS=: read x n; do
-      m=$(echo $n | sed 's/^\([0-9]*\.[0-9]*\)\..*/\1/; s/\<[0-9]\>/0&/g')
-      if [ $m \< $MIN_K8S ]; then
-        echo -ne "$FAIL"
-      else
-        echo -ne "$PASS"
-      fi
-      echo Cluster is running Kubernetes $n
-    done
-
-    grep ^CPU: preflight | while IFS=: read x host n; do
-      if [ $MIN_CORES -gt $n ]; then
-        echo -ne "$FAIL"
-      else
-        echo -ne "$PASS"
-      fi
-      echo $host has $n CPUs
-    done
-    
-    MIN_DOCKER=$(echo $MIN_DOCKER | sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g')
-    grep ^DOCKER: preflight | while IFS=: read x host n; do
-      m=$(echo $n | sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g')
-      if [ $m \< $MIN_DOCKER ]; then
-        echo -ne "$FAIL"
-      else
-        echo -ne "$PASS"
-      fi
-      echo $host is running Docker $n
-    done
-
-    MIN_KERNEL=$(echo $MIN_KERNEL | sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g')
-    grep ^KERNEL: preflight | while IFS=: read x host n; do
-      m=$(echo $n | sed 's/^\([0-9]*\.[0-9]*\.[0-9]*\)[^0-9].*/\1/; s/\<[0-9]\>/0&/g')
-      if [ $m \< $MIN_KERNEL ]; then
-        echo -ne "$FAIL"
-      else
-        echo -ne "$PASS"
-      fi
-      echo $host is running kernel $n
-    done
-
-    grep ^RAM: preflight | while IFS=: read x host n; do
-      if [ $MIN_RAM -gt $n ]; then
-        echo -ne "$FAIL"
-      else
-        echo -ne "$PASS"
-      fi
-      echo $host has $n MB RAM
-    done
-
-    grep ^SWAP: preflight | while IFS=: read x host n; do
-      if [ $n -gt 0 ]; then
-        echo -e "$FAIL$host has swap"
-      else
-        echo -e "$PASS$host has no swap"
-      fi
-    done
-
-    grep ^VAR: preflight | while IFS=: read x host n; do
-      if [ $MIN_VAR -gt $n ]; then
-        echo -ne "$FAIL"
-      else
-        echo -ne "$PASS"
-      fi
-      echo $host has $n MB free on /var
-    done
-
-    grep ^PING: preflight | while IFS=: read x src dest n; do
-      if [ $n == fail ]; then
-        echo -e "${FAIL}Ping failure from $src to $dest"
-      else
-        if [ $MAX_PING -lt $n ]; then
-          echo -ne "$FAIL"
-        else
-          echo -ne "$PASS"
-        fi
-        echo Latency from $src to $dest is $n μs
-      fi
-    done
-
-    grep ^TCP: preflight | while IFS=: read x src dest p n; do
-      if [ $n -ne 0 ]; then
-        echo -e "${FAIL}Cannot connect from $src to $dest:$p"
-      else
-        echo -e "${PASS}Can connect from $src to $dest:$p"
-      fi
-    done
-
-    grep ^BLK: preflight | while IFS=: read x host name size type; do
-      echo -e "${RESET}$host has device $name ($size GB) ($type)"
-    done
-
-    for a in $NODES; do
-      for c in $NODES; do
-        [ $a = $c ] && continue
-        echo "$a:$(echo $START_PORT+1 | bc):$c:UDP"
-      done
-      for b in $(seq $START_PORT $END_PORT); do
-        for c in $NODES; do
-          [ $a = $c ] && continue
-          echo "$a:$b:$c:TCP"
-        done
-      done
-    done | sed s/^/NC:/ | sort >desired
-    comm -23 --nocheck-order desired preflight | while IFS=: read x dest port src proto; do
-      echo -e "${FAIL}Cannot connect from $src to $dest on $port/$proto"
-    done
-
-    echo -ne $RESET
+    sub by_version {
+      my @a = split /\D/, $_[0];
+      my @b = split /\D/, $_[1];
+      $a[0] <=> $b[0] or $a[1] <=> $b[1] or $a[2] <=> $b[2];
+    }
+    EOF
 ---
 apiVersion: batch/v1
 kind: Job
@@ -176,6 +221,11 @@ spec:
               configMapKeyRef:
                 name: preflight-config
                 key: nodes
+          - name: TCP_CHECKS
+            valueFrom:
+              configMapKeyRef:
+                name: preflight-config
+                key: tcp_checks
           - name: MIN_K8S
             valueFrom:
               configMapKeyRef:

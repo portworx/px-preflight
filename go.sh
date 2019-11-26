@@ -5,13 +5,13 @@ END_PORT=9022
 NODES=$(kubectl get nodes -o wide -l 'px/enabled!=false,!node-role.kubernetes.io/master' --no-headers | awk '{print$6}')
 #TCP_CHECKS="192.168.1.1:2379 192.168.1.2:2379 192.168.1.3:2379"
 
-MIN_K8S=1.10
+MIN_K8S=1.10.0
 MIN_CORES=4
 MIN_DOCKER=1.13.1
 MIN_KERNEL=3.10.0
 MIN_RAM=7719
 MIN_VAR=2048
-MAX_PING=10000
+MAX_PING=10
 
 kubectl apply -f - <<EOF
 apiVersion: v1
@@ -47,7 +47,7 @@ kubectl version --short | awk -Fv '/Server Version: / {print $3}' | sed s/^/K8S_
 kubectl create cm preflight-output --from-file /var/tmp/preflight -n kube-system
 
 kubectl apply -f job.yml
-kubectl wait --for=condition=complete job/preflight-job -n kube-system
+kubectl wait --for=condition=complete --timeout=10s job/preflight-job -n kube-system
 JOB_POD=$(kubectl get pods -ljob-name=preflight-job -n kube-system --no-headers -o custom-columns=NAME:.metadata.name)
 kubectl logs $JOB_POD -n kube-system --tail=-1 >/var/tmp/preflight
 
