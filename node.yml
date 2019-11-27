@@ -29,6 +29,7 @@ data:
     echo PF:CPU:$(hostname -i):$(grep -c processor /proc/cpuinfo)
     echo PF:RAM:$(hostname -i):$(free -m | awk '/Mem/{print$2}')
     echo PF:VAR:$(hostname -i):$(df -m /host-var | tail -1 | awk '{print$4}')
+    echo PF:OPT:$(hostname -i):$(df -m /host-opt | tail -1 | awk '{print$4}')
     echo PF:KERNEL:$(hostname -i):$(uname -r)
     echo PF:DOCKER:$(hostname -i):$(curl -s --unix-socket /var/run/docker.sock http://dummy/version | jq -r .Version)
     lsblk -dnsb -o NAME,SIZE,TYPE,MOUNTPOINT | while read n s t m; do
@@ -78,6 +79,10 @@ spec:
         hostPath:
           path: /var
           type: Directory
+      - name: host-opt
+        hostPath:
+          path: /opt
+          type: Directory
       - name: docker-sock
         hostPath:
           path: /var/run/docker.sock
@@ -99,6 +104,8 @@ spec:
             subPath: entrypoint.sh
           - name: host-var
             mountPath: /host-var
+          - name: host-opt
+            mountPath: /host-opt
           - name: docker-sock
             mountPath: /var/run/docker.sock
           env:

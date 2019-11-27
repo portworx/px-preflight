@@ -49,7 +49,7 @@ data:
     }
     print "Kubernetes is $k8s_ver (>=$ENV{MIN_K8S} required)\n \n".RESET;
     print "-" x 137 . "\n";
-    printf "%-15s  %-5s  %-14s  %-26s  %-9s  %-8s  %-9s  %s\n", "Node", "Cores", "Docker version", "Kernel", "RAM", "Swap", "/var free", "Block devices";
+    printf "%-15s  %-5s  %-14s  %-26s  %-9s  %-8s  %-9s  %-9s  %s\n", "Node", "Cores", "Docker version", "Kernel", "RAM", "Swap", "/var free", "/opt free",  "Block devices";
     print "-" x 137 . "\n";
     for my$n (split " ", $ENV{NODES}) {
       printf "%-15s  ", $n;
@@ -95,6 +95,13 @@ data:
         print GREEN;
       }
       printf "%-9s".RESET."  ", "$table{$n}{VAR}[0]MB";
+      if ($table{$n}{OPT}[0] < $ENV{MIN_OPT}) {
+        print RED;
+        $fail++;
+      } else {
+        print GREEN;
+      }
+      printf "%-9s".RESET."  ", "$table{$n}{OPT}[0]MB";
       foreach(0..$#{$table{$n}{BLK}}) {
         print " " x 107 if ($_);
         print "$table{$n}{BLK}->[$_]->[0] ($table{$n}{BLK}->[$_]->[1]GB) ($table{$n}{BLK}->[$_]->[2])\n";
@@ -256,6 +263,11 @@ spec:
               configMapKeyRef:
                 name: preflight-config
                 key: min_var
+          - name: MIN_OPT
+            valueFrom:
+              configMapKeyRef:
+                name: preflight-config
+                key: min_opt
           - name: MAX_PING
             valueFrom:
               configMapKeyRef:
