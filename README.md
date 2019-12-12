@@ -154,9 +154,8 @@ Success - please visit https://install.portworx.com/ to generate your spec
 # TODO
 
  * /var should be /var/lib
- * Shared mount capability
+ * Shared mount capability - `grep "/ / " /proc/1/mountinfo | grep -q shared && echo pass`
  * PX module kernel header dependency (Check available host headers & mirrors)
- * Available local sockets. (Check local sockets to see if they are in use.)
  * Check etcd endpoints
  * Check time sync
  * Check at least 3 nodes have storage
