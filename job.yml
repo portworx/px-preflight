@@ -13,7 +13,7 @@ data:
     use strict;
     print YELLOW."SUMMARY\n";
     print YELLOW."-------\n".RESET;
-    my ($k8s_ver, %table, %ping, %tcp, %nc, %timeskew);
+    my ($k8s_ver, %table, %ping, %tcp, %nc, %timeskew, %storagenode);
     open IN, "preflight";
     while(<IN>) {
       chomp;
@@ -108,6 +108,7 @@ data:
       foreach(0..$#{$table{$n}{BLK}}) {
         print " " x 107 if ($_);
         print "$table{$n}{BLK}->[$_]->[0] ($table{$n}{BLK}->[$_]->[1]GB) ($table{$n}{BLK}->[$_]->[2])\n";
+        $storagenode{$n}++;
       }
     }
     print "-" x 137 . "\n";
@@ -146,6 +147,12 @@ data:
       if ($timeskew{$i} > $ENV{MAX_TIMESKEW}) {
         push @timeskewfail, $i;
       }
+    }
+    if (scalar(keys%storagenode) > 2) {
+      print GREEN.(scalar(keys%storagenode))." storage nodes found\n".RESET;
+    } else {
+      print RED.(scalar(keys%storagenode))." storage nodes found; must have >= 3 storage nodes\n".RESET;
+      $fail++;
     }
     if ($pingfail) {
       print "Ping latency must be <$ENV{MAX_PING}ms:\n";
