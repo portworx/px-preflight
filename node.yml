@@ -28,7 +28,7 @@ data:
     echo PF:SWAP:$(hostname -i):$(tail +2 /proc/swaps | wc -l)
     echo PF:CPU:$(hostname -i):$(grep -c processor /proc/cpuinfo)
     echo PF:RAM:$(hostname -i):$(free -m | awk '/Mem/{print$2}')
-    echo PF:VAR:$(hostname -i):$(df -m /host-var | tail -1 | awk '{print$4}')
+    echo PF:VAR:$(hostname -i):$(df -m /host-var/lib | tail -1 | awk '{print$4}')
     echo PF:OPT:$(hostname -i):$(df -m /host-opt | tail -1 | awk '{print$4}')
     echo PF:KERNEL:$(hostname -i):$(uname -r)
     echo PF:DOCKER:$(hostname -i):$(curl -s --unix-socket /var/run/docker.sock http://dummy/version | jq -r .Version)
