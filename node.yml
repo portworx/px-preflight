@@ -32,6 +32,7 @@ data:
     echo PF:OPT:$(hostname -i):$(df -m /host-opt | tail -1 | awk '{print$4}')
     echo PF:KERNEL:$(hostname -i):$(uname -r)
     echo PF:DOCKER:$(hostname -i):$(curl -s --unix-socket /var/run/docker.sock http://dummy/version | jq -r .Version)
+    echo PF:TIMESKEW:$(hostname -i):$(echo $(date +%s)-$(date +%s -d "20$(nc -w 1 time.nist.gov 13 | tail -1 | cut -f 2,3 -d " ")") | bc)
     lsblk -dnsb -o NAME,SIZE,TYPE,MOUNTPOINT | while read n s t m; do
       [ $m ] && continue
       s=$(echo $s/1073741824 | bc)

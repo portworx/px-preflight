@@ -13,6 +13,7 @@ MIN_RAM=7719
 MIN_VAR=2560
 MIN_OPT=2816
 MAX_PING=10
+MAX_TIMESKEW=0
 
 kubectl apply -f - <<EOF
 apiVersion: v1
@@ -33,6 +34,7 @@ data:
   min_var: "$MIN_VAR"
   min_opt: "$MIN_OPT"
   max_ping: "$MAX_PING"
+  max_timeskew: "$MAX_TIMESKEW"
 EOF
 
 kubectl apply -f nc.yml

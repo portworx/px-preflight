@@ -156,6 +156,5 @@ Success - please visit https://install.portworx.com/ to generate your spec
  * Shared mount capability - `grep "/ / " /proc/1/mountinfo | grep -q shared && echo pass`
  * PX module kernel header dependency (Check available host headers & mirrors)
  * Check etcd endpoints
- * Check time sync
  * Check at least 3 nodes have storage
  * Check for secureboot (mokutil --sb-state | grep -i "secureboot enabled")
