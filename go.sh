@@ -13,7 +13,7 @@ MIN_RAM=7719
 MIN_VAR=2560
 MIN_OPT=2816
 MAX_PING=10
-MAX_TIMESKEW=0
+MAX_TIMESKEW=5
 
 kubectl apply -f - <<EOF
 apiVersion: v1
