@@ -39,7 +39,9 @@ data:
         my $n = pop @line;
         $timeskew{$host} = abs($n);
       } else {
-        $table{$host}{$label} = \@line;
+        my $n = pop @line;
+        $n =~ s/.x86_64// if ($label eq "KERNEL");
+        $table{$host}{$label} = $n;
       }
     }
     close IN;
@@ -56,55 +58,55 @@ data:
     print "-" x 137 . "\n";
     for my$n (split " ", $ENV{NODES}) {
       printf "%-15s  ", $n;
-      if ($table{$n}{CPU}[0] < $ENV{MIN_CORES}) {
+      if ($table{$n}{CPU} < $ENV{MIN_CORES}) {
         print RED;
         $fail++;
       } else {
         print GREEN;
       }
-      printf "%-5s".RESET."  ", $table{$n}{CPU}[0];
-      if (by_version($table{$n}{DOCKER}[0], $ENV{MIN_DOCKER}) < 0) {
+      printf "%-5s".RESET."  ", $table{$n}{CPU};
+      if (by_version($table{$n}{DOCKER}, $ENV{MIN_DOCKER}) < 0) {
         print RED;
         $fail++;
       } else {
         print GREEN;
       }
-      printf "%-14s", $table{$n}{DOCKER}[0];
+      printf "%-14s", $table{$n}{DOCKER};
       print RESET."  ";
-      if (by_version($table{$n}{KERNEL}[0], $ENV{MIN_KERNEL}) < 0) {
+      if (by_version($table{$n}{KERNEL}, $ENV{MIN_KERNEL}) < 0) {
         print RED;
         $fail++;
       } else {
         print GREEN;
       }
-      printf "%-26s".RESET."  ", $table{$n}{KERNEL}[0];
-      if ($table{$n}{RAM}[0] < $ENV{MIN_RAM}) {
+      printf "%-26s".RESET."  ", $table{$n}{KERNEL};
+      if ($table{$n}{RAM} < $ENV{MIN_RAM}) {
         print RED;
         $fail++;
       } else {
         print GREEN;
       }
-      printf "%-9s".RESET."  ", "$table{$n}{RAM}[0]MB";
-      if ($table{$n}{SWAP}[0]) {
+      printf "%-9s".RESET."  ", "$table{$n}{RAM}MB";
+      if ($table{$n}{SWAP}) {
         print RED."Enabled".RESET."  ";
         $fail++;
       } else {
         print GREEN."Disabled".RESET."  ";
       }
-      if ($table{$n}{VAR}[0] < $ENV{MIN_VAR}) {
+      if ($table{$n}{VAR} < $ENV{MIN_VAR}) {
         print RED;
         $fail++;
       } else {
         print GREEN;
       }
-      printf "%-9s".RESET."  ", "$table{$n}{VAR}[0]MB";
-      if ($table{$n}{OPT}[0] < $ENV{MIN_OPT}) {
+      printf "%-9s".RESET."  ", "$table{$n}{VAR}MB";
+      if ($table{$n}{OPT} < $ENV{MIN_OPT}) {
         print RED;
         $fail++;
       } else {
         print GREEN;
       }
-      printf "%-9s".RESET."  ", "$table{$n}{OPT}[0]MB";
+      printf "%-9s".RESET."  ", "$table{$n}{OPT}MB";
       print "\n" unless (defined${table}{$n}{BLK});
       foreach(0..$#{$table{$n}{BLK}}) {
         print " " x 107 if ($_);
