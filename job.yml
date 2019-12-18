@@ -105,6 +105,7 @@ data:
         print GREEN;
       }
       printf "%-9s".RESET."  ", "$table{$n}{OPT}[0]MB";
+      print "\n" unless (defined${table}{$n}{BLK});
       foreach(0..$#{$table{$n}{BLK}}) {
         print " " x 107 if ($_);
         print "$table{$n}{BLK}->[$_]->[0] ($table{$n}{BLK}->[$_]->[1]GB) ($table{$n}{BLK}->[$_]->[2])\n";
