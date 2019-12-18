@@ -53,9 +53,9 @@ data:
       print GREEN;
     }
     print "Kubernetes is $k8s_ver (>=$ENV{MIN_K8S} required)\n \n".RESET;
-    print "-" x 134 . "\n";
-    printf "%-15s  %-5s  %-14s  %-23s  %-9s  %-8s  %-9s  %-9s  %s\n", "Node", "Cores", "Docker version", "Kernel", "RAM", "Swap", "/var free", "/opt free",  "Block devices";
-    print "-" x 134 . "\n";
+    print "-" x 131 . "\n";
+    printf "%-15s  %-5s  %-11s  %-23s  %-9s  %-8s  %-9s  %-9s  %s\n", "Node", "Cores", "Docker", "Kernel", "RAM", "Swap", "/var free", "/opt free",  "Block devices";
+    print "-" x 131 . "\n";
     for my$n (split " ", $ENV{NODES}) {
       printf "%-15s  ", $n;
       if ($table{$n}{CPU} < $ENV{MIN_CORES}) {
@@ -71,7 +71,7 @@ data:
       } else {
         print GREEN;
       }
-      printf "%-14s", $table{$n}{DOCKER};
+      printf "%-11s", $table{$n}{DOCKER};
       print RESET."  ";
       if (by_version($table{$n}{KERNEL}, $ENV{MIN_KERNEL}) < 0) {
         print RED;
@@ -114,7 +114,7 @@ data:
         $storagenode{$n}++;
       }
     }
-    print "-" x 134 . "\n";
+    print "-" x 131 . "\n";
     print "\n \n";
     print "Cores: >=$ENV{MIN_CORES} recommended\n";
     print "Docker: >=$ENV{MIN_DOCKER} required\n";
