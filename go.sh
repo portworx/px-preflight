@@ -55,6 +55,11 @@ kubectl wait --for=condition=complete --timeout=10s job/preflight-job -n kube-sy
 JOB_POD=$(kubectl get pods -ljob-name=preflight-job -n kube-system --no-headers -o custom-columns=NAME:.metadata.name)
 kubectl logs $JOB_POD -n kube-system --tail=-1 >/var/tmp/preflight
 
+if [ $1 = -d ]; then
+  kubectl logs -n kube-system >/var/tmp/preflight.debug 2>/dev/null
+  kubectl describe pod -n kube-system >>/var/tmp/preflight.debug 2>/dev/null
+  kubectl describe ds -n kube-system >>/var/tmp/preflight.debug 2>/dev/null
+fi
 kubectl delete cm node-script -n kube-system
 kubectl delete cm nc-script -n kube-system
 kubectl delete ds node -n kube-system

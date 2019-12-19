@@ -151,6 +151,10 @@ All internal TCP checks passed
 Success - please visit https://install.portworx.com/ to generate your spec
 ```
 
+# Debugging
+
+If the `-d` flag is supplied to `go.sh`, a debug file will be generated at `/var/tmp/preflight.debug`.
+
 # TODO
 
  * PX module kernel header dependency (Check available host headers & mirrors)
